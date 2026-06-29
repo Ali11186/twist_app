@@ -12,7 +12,7 @@ class ApiService {
     return '${random.nextInt(0xffffffff)}-${random.nextInt(0xffff)}-${random.nextInt(0xffff)}-${random.nextInt(0xffff)}-${random.nextInt(0xffffffffffff)}';
   }
   
-  static Map<String, String> get _baseHeaders => {
+  static Map<String, String> get baseHeaders => {
     'user-agent': 'Twist-Mobile/10.10.49 (Android; 12; SM-A217F; music; ar-AE)',
     'app_version': '10.10.49',
     'appversion': '10.10.49',
@@ -36,7 +36,7 @@ class ApiService {
   // إرسال كود التحقق
   static Future<Map<String, dynamic>> sendOtp(String phone) async {
     try {
-      final headers = Map<String, String>.from(_baseHeaders);
+      final headers = Map<String, String>.from(baseHeaders);
       final response = await _client.post(
         Uri.parse('$baseUrl/Dlogin/sendCode'),
         headers: headers,
@@ -55,7 +55,7 @@ class ApiService {
   // التحقق من OTP وتسجيل الدخول
   static Future<Map<String, dynamic>> verifyOtp(String phone, String code) async {
     try {
-      final headers = Map<String, String>.from(_baseHeaders);
+      final headers = Map<String, String>.from(baseHeaders);
       final response = await _client.post(
         Uri.parse('$baseUrl/Dlogin/verify'),
         headers: headers,

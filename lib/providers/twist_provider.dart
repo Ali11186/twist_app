@@ -66,7 +66,7 @@ class TwistProvider extends ChangeNotifier {
     final result = await ApiService.verifyOtp(formattedPhone, code);
     
     if (result['success'] == true) {
-      _headers = Map<String, String>.from(ApiService._baseHeaders);
+      _headers = Map<String, String>.from(ApiService.baseHeaders);
       _headers['authorization'] = 'Bearer ${result['token']}';
       
       Map<String, String> extraHeaders = Map<String, String>.from(result['headers'] ?? {});
