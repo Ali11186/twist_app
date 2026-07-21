@@ -14,7 +14,7 @@ final themeProvider = Provider<ThemeData>((ref) {
       onPrimary: Color(0xFF0D1117),
       onSurface: Colors.white,
     ),
-    fontFamily: 'Cairo',
+    
     textTheme: const TextTheme(
       displayLarge: TextStyle(fontSize: 56, fontWeight: FontWeight.w800, color: Colors.white),
       headlineLarge: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: Colors.white),
@@ -30,7 +30,7 @@ final themeProvider = Provider<ThemeData>((ref) {
         foregroundColor: const Color(0xFF0D1117),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Cairo'),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, ),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
