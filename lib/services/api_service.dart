@@ -6,14 +6,7 @@ class ApiService {
   static const String baseUrl = 'https://api.twistmena.com/music';
 
   String _generateSessionId() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replaceAllMapped(
-      RegExp(r'[xy]'),
-      (match) {
-        final r = Random().nextInt(16);
-        final v = match[0] == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toRadixString(16);
-      },
-    );
+    return 'f74d51bb-d548-4d5b-835c-3b6fc99076f6';
   }
 
   String _generateIp() {
@@ -22,9 +15,8 @@ class ApiService {
 
   Map<String, String> _initHeaders() {
     final ip = _generateIp();
-    final sessionId = _generateSessionId();
     return {
-      'User-Agent': 'Twist-Mobile/11.2.10 (Android; 14; SM-A235F; music; en-GB)',
+      'user-agent': 'Twist-Mobile/11.2.10 (Android; 12; SM-A217F; music; ar-AE)',
       'app_version': '11.2.10',
       'appversion': '11.2.10',
       'channel': 'mobileapp',
@@ -33,16 +25,16 @@ class ApiService {
       'accept': 'application/json',
       'accept-language': 'ar',
       'host': 'api.twistmena.com',
-      'device_id': 'UP1A.231005.007',
-      'sessionid': sessionId,
-      'X-Forwarded-For': ip,
-      'X-Real-IP': ip,
-      'customer-ip': ip,
+      'device_id': 'SP1A.210812.016',
       'tgdeviceid': '',
       'device_token': '',
       'tg-token': '',
       'tg-refresh-token': '',
       'access-token': '',
+      'sessionid': _generateSessionId(),
+      'X-Forwarded-For': ip,
+      'X-Real-IP': ip,
+      'customer-ip': ip,
       'accept-encoding': 'gzip',
       'connection': 'keep-alive',
     };
@@ -60,6 +52,10 @@ class ApiService {
     final formatted = _formatPhone(phone);
     final headers = _initHeaders();
 
+    print('=== SEND CODE ===');
+    print('Phone: $formatted');
+    print('Headers: $headers');
+
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/Dlogin/sendCode'),
@@ -67,8 +63,8 @@ class ApiService {
         body: jsonEncode({'dial': formatted}),
       );
 
-      print('SendCode Response: ${response.statusCode}');
-      print('SendCode Body: ${response.body}');
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final body = response.body;
@@ -76,7 +72,7 @@ class ApiService {
       }
       return false;
     } catch (e) {
-      print('SendCode Error: $e');
+      print('Error: $e');
       throw Exception('فشل الاتصال: $e');
     }
   }
@@ -84,6 +80,10 @@ class ApiService {
   Future<Map<String, dynamic>?> verifyCode(String phone, String code) async {
     final formatted = _formatPhone(phone);
     final headers = _initHeaders();
+
+    print('=== VERIFY CODE ===');
+    print('Phone: $formatted');
+    print('Code: $code');
 
     try {
       final response = await http.post(
@@ -97,9 +97,9 @@ class ApiService {
         }),
       );
 
-      print('Verify Response: ${response.statusCode}');
-      print('Verify Body: ${response.body}');
-      print('Verify Headers: ${response.headers}');
+      print('Status: ${response.statusCode}');
+      print('Body: ${response.body}');
+      print('Response Headers: ${response.headers}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -117,7 +117,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      print('Verify Error: $e');
+      print('Error: $e');
       throw Exception('فشل التحقق: $e');
     }
   }
