@@ -6,7 +6,7 @@ on:
       build_type:
         description: 'Build type'
         required: true
-        default: 'debug'
+        default: 'release'
         type: choice
         options: [debug, profile, release]
       output_type:
@@ -15,12 +15,6 @@ on:
         default: 'apk'
         type: choice
         options: [apk, appbundle, apk-split]
-      target_platform:
-        description: 'Target platform'
-        required: false
-        default: 'all'
-        type: choice
-        options: [all, android-arm64, android-arm, android-x64]
 
 jobs:
   build:
@@ -42,19 +36,45 @@ jobs:
         run: flutter pub get
 
       - name: Create android folder
-        run: flutter create --platforms android .
+        run: flutter create --platforms android --org com.ahmed --project-name twist_app .
 
-      - name: Build
+      - name: Add permissions to AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"\/>\n    <uses-permission android:name="android.permission.VIBRATE"\/>\n    <application/' $MANIFEST
+
+      - name: Set app label
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/android:label="[^"]*"/android:label="Twist"/' $MANIFEST
+
+      - name: Generate app icon
+        run: |
+          sudo apt-get install -y imagemagick
+          ICON_PATH="assets/images/app_icon.png"
+          if [ -f "$ICON_PATH" ]; then
+            for size in 48 72 96 144 192; do
+              case $size in
+                48)  folder="mipmap-mdpi" ;;
+                72)  folder="mipmap-hdpi" ;;
+                96)  folder="mipmap-xhdpi" ;;
+                144) folder="mipmap-xxhdpi" ;;
+                192) folder="mipmap-xxxhdpi" ;;
+              esac
+              mkdir -p android/app/src/main/res/$folder
+              convert "$ICON_PATH" -resize ${size}x${size} android/app/src/main/res/$folder/ic_launcher.png
+            done
+            echo "✅ Icons generated"
+          else
+            echo "⚠️ No icon found, using default"
+          fi
+
+      - name: Build APK
         run: |
           TYPE="${{ github.event.inputs.build_type }}"
           OUT="${{ github.event.inputs.output_type }}"
-          PLAT="${{ github.event.inputs.target_platform }}"
           if [ "$OUT" = "apk" ]; then
-            if [ "$PLAT" != "all" ]; then
-              flutter build apk --$TYPE --target-platform $PLAT
-            else
-              flutter build apk --$TYPE
-            fi
+            flutter build apk --$TYPE
           elif [ "$OUT" = "apk-split" ]; then
             flutter build apk --$TYPE --split-per-abi
           elif [ "$OUT" = "appbundle" ]; then
