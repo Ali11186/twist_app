@@ -5,8 +5,24 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String baseUrl = 'https://api.twistmena.com/music';
 
+  String _generateSessionId() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replaceAllMapped(
+      RegExp(r'[xy]'),
+      (match) {
+        final r = Random().nextInt(16);
+        final v = match[0] == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toRadixString(16);
+      },
+    );
+  }
+
+  String _generateIp() {
+    return '102.62.${Random().nextInt(255) + 1}.${Random().nextInt(255) + 1}';
+  }
+
   Map<String, String> _initHeaders() {
-    final ip = '102.62.${Random().nextInt(255) + 1}.${Random().nextInt(255) + 1}';
+    final ip = _generateIp();
+    final sessionId = _generateSessionId();
     return {
       'User-Agent': 'Twist-Mobile/11.2.10 (Android; 14; SM-A235F; music; en-GB)',
       'app_version': '11.2.10',
@@ -15,13 +31,20 @@ class ApiService {
       'content-type': 'application/json',
       'platform': 'android',
       'accept': 'application/json',
-      'accept-language': 'en',
+      'accept-language': 'ar',
       'host': 'api.twistmena.com',
       'device_id': 'UP1A.231005.007',
-      'sessionid': 'f74d51bb-d548-4d5b-835c-3b6fc99076f6',
+      'sessionid': sessionId,
       'X-Forwarded-For': ip,
       'X-Real-IP': ip,
       'customer-ip': ip,
+      'tgdeviceid': '',
+      'device_token': '',
+      'tg-token': '',
+      'tg-refresh-token': '',
+      'access-token': '',
+      'accept-encoding': 'gzip',
+      'connection': 'keep-alive',
     };
   }
 
@@ -44,12 +67,16 @@ class ApiService {
         body: jsonEncode({'dial': formatted}),
       );
 
+      print('SendCode Response: ${response.statusCode}');
+      print('SendCode Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final body = response.body;
-        return !body.contains('Failed');
+        return !body.toLowerCase().contains('failed');
       }
       return false;
     } catch (e) {
+      print('SendCode Error: $e');
       throw Exception('فشل الاتصال: $e');
     }
   }
@@ -70,6 +97,10 @@ class ApiService {
         }),
       );
 
+      print('Verify Response: ${response.statusCode}');
+      print('Verify Body: ${response.body}');
+      print('Verify Headers: ${response.headers}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         String? token = data['token'] ?? data['authorization'];
@@ -86,6 +117,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
+      print('Verify Error: $e');
       throw Exception('فشل التحقق: $e');
     }
   }
