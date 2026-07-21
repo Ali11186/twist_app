@@ -5,22 +5,18 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String baseUrl = 'https://api.twistmena.com/music';
 
-  String _generateSessionId() {
-    return 'f74d51bb-d548-4d5b-835c-3b6fc99076f6';
-  }
-
   String _generateIp() {
     return '102.62.${Random().nextInt(255) + 1}.${Random().nextInt(255) + 1}';
   }
 
-  Map<String, String> _initHeaders() {
+  Map<String, String> _getHeaders() {
     final ip = _generateIp();
     return {
       'user-agent': 'Twist-Mobile/11.2.10 (Android; 12; SM-A217F; music; ar-AE)',
       'app_version': '11.2.10',
       'appversion': '11.2.10',
       'channel': 'mobileapp',
-      'content-type': 'application/json',
+      'content-type': 'application/json; charset=utf-8',
       'platform': 'android',
       'accept': 'application/json',
       'accept-language': 'ar',
@@ -31,7 +27,7 @@ class ApiService {
       'tg-token': '',
       'tg-refresh-token': '',
       'access-token': '',
-      'sessionid': _generateSessionId(),
+      'sessionid': 'f74d51bb-d548-4d5b-835c-3b6fc99076f6',
       'X-Forwarded-For': ip,
       'X-Real-IP': ip,
       'customer-ip': ip,
@@ -50,36 +46,48 @@ class ApiService {
 
   Future<bool> sendCode(String phone) async {
     final formatted = _formatPhone(phone);
-    final headers = _initHeaders();
+    final headers = _getHeaders();
+    final body = jsonEncode({'dial': formatted});
 
     print('=== SEND CODE ===');
-    print('Phone: $formatted');
-    print('Headers: $headers');
+    print('URL: $baseUrl/Dlogin/sendCode');
+    print('Phone formatted: $formatted');
+    print('Body: $body');
 
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/Dlogin/sendCode'),
         headers: headers,
-        body: jsonEncode({'dial': formatted}),
+        body: body,
+        encoding: utf8,
       );
 
       print('Status: ${response.statusCode}');
       print('Body: ${response.body}');
+      print('Headers: ${response.headers}');
 
       if (response.statusCode == 200) {
-        final body = response.body;
-        return !body.toLowerCase().contains('failed');
+        final responseBody = response.body.toLowerCase();
+        return !responseBody.contains('failed') && 
+               !responseBody.contains('error') &&
+               !responseBody.contains('invalid');
       }
       return false;
     } catch (e) {
-      print('Error: $e');
-      throw Exception('فشل الاتصال: $e');
+      print('Error sending code: $e');
+      throw Exception('فشل الاتصال بالسيرفر: $e');
     }
   }
 
   Future<Map<String, dynamic>?> verifyCode(String phone, String code) async {
     final formatted = _formatPhone(phone);
-    final headers = _initHeaders();
+    final headers = _getHeaders();
+    final body = jsonEncode({
+      'dial': formatted,
+      'verifyCode': code,
+      'socialServiceName': '',
+      'socialServiceToken': '',
+    });
 
     print('=== VERIFY CODE ===');
     print('Phone: $formatted');
@@ -89,41 +97,45 @@ class ApiService {
       final response = await http.post(
         Uri.parse('$baseUrl/Dlogin/verify'),
         headers: headers,
-        body: jsonEncode({
-          'dial': formatted,
-          'verifyCode': code,
-          'socialServiceName': '',
-          'socialServiceToken': '',
-        }),
+        body: body,
+        encoding: utf8,
       );
 
       print('Status: ${response.statusCode}');
       print('Body: ${response.body}');
-      print('Response Headers: ${response.headers}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        String? token = data['token'] ?? data['authorization'];
+        
+        String? token = data['token'];
         if (token == null) {
-          token = response.headers['authorization'];
+          token = data['authorization'];
         }
-        if (token != null) {
-          token = token.replaceAll('Bearer ', '');
+        if (token == null) {
+          final authHeader = response.headers['authorization'] ?? '';
+          if (authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+          } else {
+            token = authHeader;
+          }
+        }
+
+        if (token != null && token.isNotEmpty) {
           return {
-            'token': token,
-            'accessToken': data['accessToken'] ?? '',
+            'token': token.toString().replaceAll('Bearer ', ''),
+            'accessToken': data['accessToken']?.toString() ?? '',
           };
         }
       }
       return null;
     } catch (e) {
-      print('Error: $e');
+      print('Error verifying code: $e');
       throw Exception('فشل التحقق: $e');
     }
   }
 
   Future<int> getBalance(String token, String accessToken) async {
-    final headers = _initHeaders();
+    final headers = _getHeaders();
     headers['authorization'] = 'Bearer $token';
     headers['access-token'] = accessToken;
 
@@ -135,7 +147,11 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['balance'] ?? 0;
+        if (data is Map) {
+          return data['balance'] ?? 0;
+        } else if (data is List && data.isNotEmpty) {
+          return data[0]['balance'] ?? 0;
+        }
       }
       return 0;
     } catch (e) {
@@ -144,7 +160,7 @@ class ApiService {
   }
 
   Future<int> collectBadges(String token, String accessToken) async {
-    final headers = _initHeaders();
+    final headers = _getHeaders();
     headers['authorization'] = 'Bearer $token';
     headers['access-token'] = accessToken;
 
@@ -181,7 +197,7 @@ class ApiService {
   }
 
   Future<bool> redeem(String code, String token, String accessToken) async {
-    final headers = _initHeaders();
+    final headers = _getHeaders();
     headers['authorization'] = 'Bearer $token';
     headers['access-token'] = accessToken;
 
