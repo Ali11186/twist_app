@@ -1,32 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'providers/twist_provider.dart';
-import 'screens/login_screen.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'screens/splash_screen.dart';
+import 'providers/theme_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const TwistApp());
+  runApp(
+    const ProviderScope(
+      child: TwistApp(),
+    ),
+  );
 }
 
-class TwistApp extends StatelessWidget {
+class TwistApp extends ConsumerWidget {
   const TwistApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => TwistProvider(),
-      child: MaterialApp(
-        title: 'Twist Coin Collector',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-        ),
-        home: const LoginScreen(),
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Twist',
+      locale: const Locale('ar', 'EG'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ar', 'EG'),
+      ],
+      theme: ref.watch(themeProvider),
+      home: const SplashScreen(),
     );
   }
 }
